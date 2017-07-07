@@ -82,15 +82,15 @@ def main():
 	xsmu_driver  = xsmu.Driver()
 	xsmu_driver.open("XSMU012A")
 	
-	Amplitudes = [0.3, 3, 10]
-	time_stamps = []
+	Amplitudes     = [0.3, 3, 10]
+	time_stamps    = []
+	iterations     = int(raw_input("Enter Number of iterations : "))
 	
 	for i in range(len(Amplitudes)):
             
             time_stamps.append(time.time())
             
             DC_amplitude   = Amplitudes[i]    # V
-            iterations     = int(raw_input("Enter Number of iterations : "))
 	
             print ("Setting DC Voltage.. \n")
 	
