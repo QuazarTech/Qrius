@@ -20,6 +20,7 @@ f.close()
 # Print out the voltage values
 
 def set_DC_current (xsmu_driver, value, source_range):
+    # Need a range input corresponding to value
 
     mode       = SOURCE_MODE_CS
     autorange  = AUTORANGE_ON

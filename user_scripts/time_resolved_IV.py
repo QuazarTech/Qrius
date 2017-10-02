@@ -20,7 +20,9 @@ f.close()
 # Print out the current values
 
 def set_DC_voltage (xsmu_driver, value):
-
+    # No range input required
+    # Only available range is VS_RANGE_10V
+    
     mode       = SOURCE_MODE_VS
     autorange  = AUTORANGE_ON
     range      = VS_RANGE_10V
@@ -55,8 +57,6 @@ def stabilize_temp (xtcon_driver, tolerance):
                 print ("Fluctuation : " + str(fluctuation))
                 print ("Stable ..\n")
                 break
-        
-        
 
 def main():
 	
@@ -64,49 +64,46 @@ def main():
         xtcon_devices = xtcon_driver.scan()
 	xtcon_driver.open(xtcon_devices[0])
 	
-	setpoint       = float(raw_input ("Enter isothermal setpoint (K) :"))
-	tolerance      = float(raw_input ("Tempereature Tolerance (over 10 successive readings) (K) : "))
+	temperatures = []
 	
-	xtcon_driver.setIsothermalSetpoint (setpoint)
-	print ("Starting Isothermal Run.. \n")
-	xtcon_driver.startIsothermalControl()
+	setpoint = float(raw_input ("Enter isothermal setpoint              (K) : "))
+	temperatures.append (setpoint)
+	response = raw_input ("Do you want to add another temperature setpoint? : y/n")
+	while (response == 'y'):
+            setpoint = float(raw_input ("Enter isothermal setpoint              (K) : "))
+            temperatures.append (setpoint)
+            response = raw_input ("Do you want to add another temperature setpoint? : y/n")
+            
+        tolerance      = float(raw_input ("Tempereature Tolerance (over 10 successive readings) (K) : "))
+	monitoring_period = int  (raw_input ("Enter the monitoring period (Number of temperature readings)  : "))
+	iterations        = int(raw_input("Enter Number of datapoints at each temperature : "))
 	
-	stabilize_temp (xtcon_driver, tolerance)
-	# Stabilizes the temperature and waits for user to take an IV run from Qrius GUI
-	#raw_input ("Press Enter when IV from Qrius GUI is complete")
-	
-	#response = raw_input("Press y to continue? : y \n")
-	#while (response != 'y'):
-        #    response = raw_input("Press y to continue? : y/n \n")
-
 	xsmu_driver  = xsmu.Driver()
 	xsmu_driver.open("XSMU012A")
 	
-	Amplitudes = [0.05, 0.5, 5]
-	time_stamps = []
+	for setpoint in temperatures:
+            print ("Starting Isothermal Run at " + str(setpoint) + " K \n")
+            xtcon_driver.setIsothermalSetpoint (setpoint)
+            xtcon_driver.startIsothermalControl()
 	
-	for i in range(len(Amplitudes)):
+            # Stabilizes the temperature and waits for user to take an IV run from Qrius GUI
+            stabilize_temp (xtcon_driver, tolerance)
+
+	
+            Amplitudes     = [0.0]
             
-            time_stamps.append(time.time())
-            
-            DC_amplitude   = Amplitudes[i]    # V
-            iterations     = int(raw_input("Enter Number of iterations : "))
+            for i in range(len(Amplitudes)):
+                
+                DC_amplitude   = Amplitudes[i]    # V
+                
+                print ("Setting DC Voltage.. \n")
 	
-            print ("Setting DC Voltage.. \n")
+                set_DC_voltage (xsmu_driver, DC_amplitude)
+                measure_current(xsmu_driver, xtcon_driver, iterations)
 	
-            set_DC_voltage (xsmu_driver, DC_amplitude)
-            measure_current(xsmu_driver, xtcon_driver, iterations)
+            xtcon_driver.stopIsothermalControl()
 	
-	xtcon_driver.stopIsothermalControl()
 	set_DC_voltage (xsmu_driver, 0.0)
-	
-        filename = open("TimeStamps.txt", "w")
-        
-        for item in time_stamps:
-            filename.write(str(item) + "\n")
-      
-        filename.close()
-	
 	xtcon_driver.close()
         xsmu_driver.close()
 
